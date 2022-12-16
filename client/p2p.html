@@ -151,21 +151,24 @@
 		async function startLive (offerSdp) {
 			target === 'offer' && (button.style.display = 'none');
 			let stream;
-			try {
-				message.log('尝试调取本地摄像头/麦克风');
-				stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-				message.log('摄像头/麦克风获取成功！');
-				localVideo.srcObject = stream;
-			} catch {
-				message.error('摄像头/麦克风获取失败！');
-				return;
-			}
 
-			message.log(`------ WebRTC ${target === 'offer' ? '发起方' : '接收方'}流程开始 ------`);
-			message.log('将媒体轨道添加到轨道集');
-			stream.getTracks().forEach(track => {
-				peer.addTrack(track, stream);
-			});
+			if (target === 'offer' ) {
+				try {
+					message.log('尝试调取本地摄像头/麦克风');
+					stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+					message.log('摄像头/麦克风获取成功！');
+					localVideo.srcObject = stream;
+				} catch {
+					message.error('摄像头/麦克风获取失败！');
+					return;
+				}
+
+				message.log(`------ WebRTC ${target === 'offer' ? '发起方' : '接收方'}流程开始 ------`);
+				message.log('将媒体轨道添加到轨道集');
+				stream.getTracks().forEach(track => {
+					peer.addTrack(track, stream);
+				});
+			}
 
 			if (!offerSdp) {
 				message.log('创建本地SDP');
