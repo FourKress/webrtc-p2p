@@ -94,11 +94,11 @@
 	const remoteVideo = document.querySelector('#remote-video');
 	const button = document.querySelector('.start-button');
 
-	localVideo.onloadeddata = () => {
+	localVideo.oncanplay = () => {
 		message.log('播放本地视频');
 		localVideo.play();
 	}
-	remoteVideo.onloadeddata = () => {
+	remoteVideo.oncanplay = () => {
 		message.log('播放对方视频');
 		remoteVideo.play();
 	}
