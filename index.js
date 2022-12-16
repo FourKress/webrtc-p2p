@@ -12,4 +12,12 @@ app.ws("/", (ws) => {
   });
 });
 
-app.listen(8090);
+app.get("/", (req, res) => {
+  res.sendFile("./client/index.html", { root: __dirname });
+});
+
+app.get("/p2p", (req, res) => {
+  res.sendFile("./client/p2p.html", { root: __dirname });
+});
+
+app.listen(7777);
