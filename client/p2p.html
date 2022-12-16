@@ -157,7 +157,7 @@
 			target === 'offer' && (button.style.display = 'none');
 			let stream;
 
-			if (target === 'offer' ) {
+			if (target !== 'offer' ) {
 				try {
 					message.log('尝试调取本地摄像头/麦克风');
 					stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
