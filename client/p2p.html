@@ -198,8 +198,8 @@
 				stream2 = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 				stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
 				message.log('摄像头/麦克风获取成功！');
-				localVideo.srcObject = stream;
-				remoteVideo.srcObject = stream2;
+				localVideo.srcObject = stream2;
+				remoteVideo.srcObject = stream;
 			} catch {
 				message.error('摄像头/麦克风获取失败！');
 				return;
