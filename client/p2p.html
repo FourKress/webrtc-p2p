@@ -175,6 +175,10 @@
 			message.log('候选人收集完成！');
 		}
 	};
+	peer2.onicecandidateerror = e => {
+		console.log(e, 'peer')
+	}
+
 	peer2.onicecandidate = e => {
 		if (e.candidate) {
 			message.log('222搜集并发送候选人');
@@ -186,6 +190,9 @@
 			message.log('222候选人收集完成！');
 		}
 	};
+	peer2.onicecandidateerror = e => {
+		console.log(e, 'peer2')
+	}
 
 	async function startLive (offerSdp) {
 		target !== 'offer' && (button.style.display = 'none');
