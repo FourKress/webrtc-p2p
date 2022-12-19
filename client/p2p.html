@@ -218,7 +218,7 @@
 			let stream2;
 			try {
 				message.log('尝试调取本地摄像头/麦克风');
-				stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+				// stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 				stream2 = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
 				message.log('摄像头/麦克风获取成功！');
 				// localVideo.srcObject = stream2;
@@ -236,8 +236,8 @@
 				peer.addTrack(track, stream2);
 			});
 
-			stream.getTracks().forEach(track => {
-				peer2.addTrack(track, stream);
+			stream2.getTracks().forEach(track => {
+				peer2.addTrack(track, stream2);
 			});
 		}
 
