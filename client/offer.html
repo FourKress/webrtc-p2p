@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>发起方</title>
+    <title>PC发起方</title>
     <style>
       * {
         padding: 0;
@@ -18,44 +18,7 @@
         justify-content: space-around;
         padding-top: 20px;
       }
-      .video-box {
-        position: relative;
-        width: 800px;
-        height: 400px;
-      }
-      #remote-video {
-        width: 100%;
-        height: 100%;
-        display: block;
-        object-fit: cover;
-        border: 1px solid #eee;
-        background-color: #f2f6fc;
-      }
-      #local-video {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 240px;
-        height: 120px;
-        object-fit: cover;
-        border: 1px solid #eee;
-        background-color: #ebeef5;
-      }
-      .start-button {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 100px;
-        display: none;
-        line-height: 40px;
-        outline: none;
-        color: #fff;
-        background-color: #409eff;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transform: translate(-50%, -50%);
-      }
+
       .logger {
         width: 40%;
         padding: 14px;
@@ -71,10 +34,6 @@
   </head>
   <body>
     <div class="container">
-      <div class="video-box">
-        <video id="remote-video" muted></video>
-        <video id="local-video" muted></video>
-      </div>
       <div class="logger"></div>
     </div>
     <script>
@@ -88,8 +47,6 @@
         },
       };
 
-      const localVideo = document.querySelector("#local-video");
-      const remoteVideo = document.querySelector("#remote-video");
 
       message.log("信令通道（WebSocket）创建中......");
       const socket = new WebSocket("wss://wx-test.qiuchangtong.xyz/webRtc/");
@@ -100,18 +57,18 @@
       socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
         const { type, iceCandidate = {} } = data;
-        if (type === "apply") {
+        if (type === "apply_pc") {
           startLive();
           return;
         }
-        if (type === "answer") {
-          // peer.setRemoteDescription(new RTCSessionDescription(data.answer));
-        } else if (type === "answer2") {
-          peer2.setRemoteDescription(new RTCSessionDescription(data.answer2));
-        } else if (type === "answer_ice") {
-          // peer.addIceCandidate(iceCandidate);
-        } else if (type === "answer_ice_2") {
-          peer2.addIceCandidate(iceCandidate);
+        if (type === "answer_pc") {
+          peer.setRemoteDescription(new RTCSessionDescription(data.answer_pc));
+        } else if (type === "answer_pc_dp") {
+          peer_dp.setRemoteDescription(new RTCSessionDescription(data.answer_pc_dp));
+        } else if (type === "answer_pc_ice") {
+          peer.addIceCandidate(iceCandidate);
+        } else if (type === "answer_pc_dp_ice") {
+          peer_dp.addIceCandidate(iceCandidate);
         }
       };
 
@@ -120,17 +77,17 @@
         window.mozRTCPeerConnection ||
         window.webkitRTCPeerConnection;
       !PeerConnection && message.error("浏览器不支持WebRTC！");
-      // const peer = new PeerConnection({
-      //   iceServers: [
-      //     {
-      //       url: "turn:lanshusoft.com:9527",
-      //       // url: "turn:qiuchangtong.xyz:3478",
-      //       credential: "123456",
-      //       username: "admin:123456",
-      //     },
-      //   ],
-      // });
-      const peer2 = new PeerConnection({
+      const peer = new PeerConnection({
+        iceServers: [
+          {
+            url: "turn:lanshusoft.com:9527",
+            // url: "turn:qiuchangtong.xyz:3478",
+            credential: "123456",
+            username: "admin:123456",
+          },
+        ],
+      });
+      const peer_dp = new PeerConnection({
         iceServers: [
           {
             url: "turn:lanshusoft.com:9527",
@@ -141,26 +98,26 @@
         ],
       });
 
-      // peer.onicecandidate = (e) => {
-      //   if (e.candidate) {
-      //     message.log("1_搜集并发送候选人");
-      //     socket.send(
-      //       JSON.stringify({
-      //         type: `offer_ice`,
-      //         iceCandidate: e.candidate,
-      //       })
-      //     );
-      //   } else {
-      //     message.log("1_候选人收集完成！");
-      //   }
-      // };
+      peer.onicecandidate = (e) => {
+        if (e.candidate) {
+          message.log("1_搜集并发送候选人");
+          socket.send(
+            JSON.stringify({
+              type: `offer_pc_ice`,
+              iceCandidate: e.candidate,
+            })
+          );
+        } else {
+          message.log("1_候选人收集完成！");
+        }
+      };
 
-      peer2.onicecandidate = (e) => {
+      peer_dp.onicecandidate = (e) => {
         if (e.candidate) {
           message.log("2_搜集并发送候选人");
           socket.send(
             JSON.stringify({
-              type: `offer_ice_2`,
+              type: `offer__pc_dp_ice`,
               iceCandidate: e.candidate,
             })
           );
@@ -171,20 +128,18 @@
 
       async function startLive(offerSdp) {
         let stream;
-        // let stream2;
+        let stream_dp;
         try {
           message.log("尝试调取本地摄像头/麦克风");
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
           });
-          // stream2 = await navigator.mediaDevices.getDisplayMedia({
-          //   video: true,
-          //   audio: false,
-          // });
+          stream_dp = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: false,
+          });
           message.log("摄像头/麦克风获取成功！");
-          // localVideo.srcObject = stream2;
-          // remoteVideo.srcObject = stream;
         } catch {
           message.error("摄像头/麦克风获取失败！");
           return;
@@ -193,31 +148,31 @@
         message.log(`------ WebRTC 发起方流程开始 ------`);
         message.log("将媒体轨道添加到轨道集");
 
-        // stream2.getTracks().forEach((track) => {
-        //   peer.addTrack(track, stream2);
-        // });
-
         stream.getTracks().forEach((track) => {
-          peer2.addTrack(track, stream);
+          peer.addTrack(track, stream);
+        });
+
+        stream_dp.getTracks().forEach((track) => {
+          peer_dp.addTrack(track, stream_dp);
         });
 
         message.log("创建本地SDP");
-        // const offer = await peer.createOffer();
-        const offer2 = await peer2.createOffer();
-        // await peer.setLocalDescription(offer);
-        await peer2.setLocalDescription(offer2);
+        const offer_pc = await peer.createOffer();
+        const offer_pc_dp = await peer_dp.createOffer();
+        await peer.setLocalDescription(offer_pc);
+        await peer_dp.setLocalDescription(offer_pc_dp);
 
         message.log(`传输发起方本地SDP`);
-        // socket.send(
-        //   JSON.stringify({
-        //     offer,
-        //     type: "offer",
-        //   })
-        // );
         socket.send(
           JSON.stringify({
-            offer2,
-            type: "offer2",
+            offer_pc,
+            type: "offer_pc",
+          })
+        );
+        socket.send(
+          JSON.stringify({
+            offer_pc_dp,
+            type: "offer_pc_dp",
           })
         );
       }

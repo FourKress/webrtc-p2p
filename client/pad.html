@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>PAD发起方</title>
+  </head>
+  <body>
+    <div class="container">
+    </div>
+    <script>
+
+      message.log("信令通道（WebSocket）创建中......");
+      const socket = new WebSocket("wss://wx-test.qiuchangtong.xyz/webRtc/");
+      socket.onopen = () => {
+        message.log("信令通道创建成功！");
+      };
+      socket.onerror = () => message.error("信令通道创建失败！");
+      socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        const { type, iceCandidate = {} } = data;
+        if (type === "apply_pad") {
+          startLive();
+          return;
+        }
+        if (type === "answer_pad") {
+          peer.setRemoteDescription(new RTCSessionDescription(data.answer_pad));
+        } else if (type === "answer_pad_ice") {
+          peer.addIceCandidate(iceCandidate);
+        }
+      };
+
+      const PeerConnection =
+        window.RTCPeerConnection ||
+        window.mozRTCPeerConnection ||
+        window.webkitRTCPeerConnection;
+      !PeerConnection && message.error("浏览器不支持WebRTC！");
+      const peer = new PeerConnection({
+        iceServers: [
+          {
+            url: "turn:lanshusoft.com:9527",
+            // url: "turn:qiuchangtong.xyz:3478",
+            credential: "123456",
+            username: "admin:123456",
+          },
+        ],
+      });
+
+      peer.onicecandidate = (e) => {
+        if (e.candidate) {
+          message.log("3_搜集并发送候选人");
+          socket.send(
+            JSON.stringify({
+              type: `offer_pad_ice`,
+              iceCandidate: e.candidate,
+            })
+          );
+        } else {
+          message.log("3_候选人收集完成！");
+        }
+      };
+
+      async function startLive() {
+        let stream;
+        try {
+          message.log("尝试调取本地摄像头/麦克风");
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          message.log("摄像头/麦克风获取成功！");
+        } catch {
+          message.error("摄像头/麦克风获取失败！");
+          return;
+        }
+
+        message.log(`------ WebRTC 发起方流程开始 ------`);
+        message.log("将媒体轨道添加到轨道集");
+
+        stream.getTracks().forEach((track) => {
+          peer.addTrack(track, stream);
+        });
+
+        message.log("创建本地SDP");
+        const offer_pad = await peer.createOffer();
+        await peer.setLocalDescription(offer_pad);
+
+        message.log(`传输发起方本地SDP`);
+        socket.send(
+          JSON.stringify({
+            offer_pad,
+            type: "offer_pad",
+          })
+        );
+      }
+    </script>
+  </body>
+</html>

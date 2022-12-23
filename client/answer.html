@@ -23,7 +23,7 @@
         width: 800px;
         height: 400px;
       }
-      #remote-video {
+      #dp-video {
         width: 100%;
         height: 100%;
         display: block;
@@ -31,7 +31,7 @@
         border: 1px solid #eee;
         background-color: #f2f6fc;
       }
-      #local-video {
+      #pc-video {
         position: absolute;
         right: 0;
         bottom: 0;
@@ -40,6 +40,16 @@
         object-fit: cover;
         border: 1px solid #eee;
         background-color: #ebeef5;
+      }
+      #pad-video {
+          position: absolute;
+          left: 0;
+          bottom: 0;
+          width: 240px;
+          height: 120px;
+          object-fit: cover;
+          border: 1px solid #eee;
+          background-color: #ebeef5;
       }
       .start-button {
         position: absolute;
@@ -72,8 +82,9 @@
   <body>
     <div class="container">
       <div class="video-box">
-        <video id="remote-video" muted></video>
+        <video id="dp-video" muted></video>
         <video id="local-video" muted></video>
+        <video id="pad-video" muted></video>
         <button class="start-button" onclick="apply()">请求共享屏幕</button>
       </div>
       <div class="logger"></div>
@@ -89,22 +100,28 @@
         },
       };
 
-      const localVideo = document.querySelector("#local-video");
-      const remoteVideo = document.querySelector("#remote-video");
+      const pcVideo = document.querySelector("#pc-video");
+      const dpVideo = document.querySelector("#dp-video");
+      const padVideo = document.querySelector("#pad-video");
       const button = document.querySelector(".start-button");
 
-      localVideo.oncanplay = () => {
+      pcVideo.oncanplay = () => {
         message.log("播放远程摄像头");
-        localVideo.play();
+        pcVideo.play();
       };
-      remoteVideo.oncanplay = () => {
+      dpVideo.oncanplay = () => {
         message.log("播放远程屏幕");
-        remoteVideo.play();
+        dpVideo.play();
+      };
+      padVideo.oncanplay = () => {
+        message.log("播放远程PAD屏幕");
+        padVideo.play();
       };
 
       document.addEventListener("click", () => {
-        localVideo.muted = false;
-        remoteVideo.muted = false;
+        pcVideo.muted = false;
+        dpVideo.muted = false;
+        padVideo.muted = false;
       });
 
       message.log("信令通道（WebSocket）创建中......");
@@ -118,14 +135,18 @@
         const data = JSON.parse(e.data);
         const { type, iceCandidate = {} } = data;
 
-        if (type === "offer") {
-          startLive(new RTCSessionDescription(data.offer));
-        } else if (type === "offer2") {
-          startLive2(new RTCSessionDescription(data.offer2));
-        } else if (type === "offer_ice") {
+        if (type === "offer_pc") {
+          startLive(new RTCSessionDescription(data.offer_pc));
+        } else if (type === "offer_pc_dp") {
+          startLive_dp(new RTCSessionDescription(data.offer_pc_dp));
+        } else if (type === "offer_pad") {
+          startLive_pad(new RTCSessionDescription(data.offer_pad));
+        } else if (type === "offer_pc_ice") {
           peerCamera.addIceCandidate(iceCandidate);
-        } else if (type === "offer_ice_2") {
+        } else if (type === "offer_pc_dp_ice") {
           peerScreen.addIceCandidate(iceCandidate);
+        } else if (type === "offer_pad_ice") {
+          peerPad.addIceCandidate(iceCandidate);
         }
       };
 
@@ -154,20 +175,38 @@
           },
         ],
       });
+      const peerPad = new PeerConnection({
+        iceServers: [
+          {
+            url: "turn:lanshusoft.com:9527",
+            // url: "turn:qiuchangtong.xyz:3478",
+            credential: "123456",
+            username: "admin:123456",
+          },
+        ],
+      });
 
       peerCamera.ontrack = (e) => {
         console.log(e);
         if (e && e.streams) {
-          message.log("1_收到对方音频/视频流数据...");
-          remoteVideo.srcObject = e.streams[0];
+          message.log("1_收到PC音频/视频流数据...");
+          pcVideo.srcObject = e.streams[0];
         }
       };
 
       peerScreen.ontrack = (e) => {
         console.log(e);
         if (e && e.streams) {
-          message.log("2_收到对方音频/视频流数据...");
-          localVideo.srcObject = e.streams[0];
+          message.log("2_收到PC桌面数据...");
+          dpVideo.srcObject = e.streams[0];
+        }
+      };
+
+      peerPad.ontrack = (e) => {
+        console.log(e);
+        if (e && e.streams) {
+          message.log("3_收到PAD音频/视频流数据...");
+          padVideo.srcObject = e.streams[0];
         }
       };
 
@@ -176,7 +215,7 @@
           message.log("1_搜集并发送候选人");
           socket.send(
             JSON.stringify({
-              type: `answer_ice`,
+              type: `answer_pc_ice`,
               iceCandidate: e.candidate,
             })
           );
@@ -190,7 +229,7 @@
           message.log("2_搜集并发送候选人");
           socket.send(
             JSON.stringify({
-              type: `answer_ice_2`,
+              type: `answer_pc_dp_ice`,
               iceCandidate: e.candidate,
             })
           );
@@ -199,43 +238,78 @@
         }
       };
 
+      peerPad.onicecandidate = (e) => {
+        if (e.candidate) {
+          message.log("3_搜集并发送候选人");
+          socket.send(
+            JSON.stringify({
+              type: `answer_pad_ice`,
+              iceCandidate: e.candidate,
+            })
+          );
+        } else {
+          message.log("3_候选人收集完成！");
+        }
+      };
+
       async function startLive(offerSdp) {
         message.log("接收到发送方SDP");
         await peerCamera.setRemoteDescription(offerSdp);
 
         message.log("创建接收方（应答）SDP");
-        const answer = await peerCamera.createAnswer();
+        const answer_pc = await peerCamera.createAnswer();
         message.log(`传输接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
-            answer,
-            type: "answer",
+            answer_pc,
+            type: "answer_pc",
           })
         );
-        await peerCamera.setLocalDescription(answer);
+        await peerCamera.setLocalDescription(answer_pc);
       }
 
-      async function startLive2(offerSdp) {
+      async function startLive_dp(offerSdp) {
         message.log("接收到发送方SDP");
         await peerScreen.setRemoteDescription(offerSdp);
 
         message.log("创建接收方（应答）SDP");
-        const answer2 = await peerScreen.createAnswer();
+        const answer_pc_dp = await peerScreen.createAnswer();
         message.log(`传输接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
-            answer2,
-            type: "answer2",
+            answer_pc_dp,
+            type: "answer_pc_dp",
           })
         );
-        await peerScreen.setLocalDescription(answer2);
+        await peerScreen.setLocalDescription(answer_pc_dp);
+      }
+
+      async function startLive_pad(offerSdp) {
+        message.log("接收到发送方SDP");
+        await peerScreen.setRemoteDescription(offerSdp);
+
+        message.log("创建接收方（应答）SDP");
+        const answer_pad = await peerScreen.createAnswer();
+        message.log(`传输接收方（应答）SDP`);
+        socket.send(
+          JSON.stringify({
+            answer_pad,
+            type: "answer_pad",
+          })
+        );
+        await peerScreen.setLocalDescription(answer_pad);
       }
 
       function apply() {
         button.style.display = "none";
         socket.send(
           JSON.stringify({
-            type: "apply",
+            type: "apply_pc",
+          })
+        );
+        socket.send(
+          JSON.stringify({
+            type: "apply_pad",
           })
         );
       }
