@@ -253,12 +253,12 @@
       };
 
       async function startLive(offerSdp) {
-        message.log("接收到发送方SDP");
+        message.log("接收到PC发送方SDP");
         await peerCamera.setRemoteDescription(offerSdp);
 
-        message.log("创建接收方（应答）SDP");
+        message.log("创建PC接收方（应答）SDP");
         const answer_pc = await peerCamera.createAnswer();
-        message.log(`传输接收方（应答）SDP`);
+        message.log(`传输PC接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
             answer_pc,
@@ -269,12 +269,12 @@
       }
 
       async function startLive_dp(offerSdp) {
-        message.log("接收到发送方SDP");
+        message.log("接收到PC_DP发送方SDP");
         await peerScreen.setRemoteDescription(offerSdp);
 
-        message.log("创建接收方（应答）SDP");
+        message.log("创建PC_DP接收方（应答）SDP");
         const answer_pc_dp = await peerScreen.createAnswer();
-        message.log(`传输接收方（应答）SDP`);
+        message.log(`传输PC_DP接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
             answer_pc_dp,
@@ -285,12 +285,12 @@
       }
 
       async function startLive_pad(offerSdp) {
-        message.log("接收到发送方SDP");
+        message.log("接收到PAD发送方SDP");
         await peerScreen.setRemoteDescription(offerSdp);
 
-        message.log("创建接收方（应答）SDP");
+        message.log("创建PAD接收方（应答）SDP");
         const answer_pad = await peerScreen.createAnswer();
-        message.log(`传输接收方（应答）SDP`);
+        message.log(`传输PAD接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
             answer_pad,
@@ -302,11 +302,11 @@
 
       function apply() {
         button.style.display = "none";
-        socket.send(
-          JSON.stringify({
-            type: "apply_pc",
-          })
-        );
+        // socket.send(
+        //   JSON.stringify({
+        //     type: "apply_pc",
+        //   })
+        // );
         socket.send(
           JSON.stringify({
             type: "apply_pad",
