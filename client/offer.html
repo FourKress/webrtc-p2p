@@ -105,11 +105,11 @@
           return;
         }
         if (type === "answer") {
-          peer.setRemoteDescription(new RTCSessionDescription(data.answer));
+          // peer.setRemoteDescription(new RTCSessionDescription(data.answer));
         } else if (type === "answer2") {
           peer2.setRemoteDescription(new RTCSessionDescription(data.answer2));
         } else if (type === "answer_ice") {
-          peer.addIceCandidate(iceCandidate);
+          // peer.addIceCandidate(iceCandidate);
         } else if (type === "answer_ice_2") {
           peer2.addIceCandidate(iceCandidate);
         }
@@ -120,16 +120,16 @@
         window.mozRTCPeerConnection ||
         window.webkitRTCPeerConnection;
       !PeerConnection && message.error("浏览器不支持WebRTC！");
-      const peer = new PeerConnection({
-        iceServers: [
-          {
-            url: "turn:lanshusoft.com:9527",
-            // url: "turn:qiuchangtong.xyz:3478",
-            credential: "123456",
-            username: "admin:123456",
-          },
-        ],
-      });
+      // const peer = new PeerConnection({
+      //   iceServers: [
+      //     {
+      //       url: "turn:lanshusoft.com:9527",
+      //       // url: "turn:qiuchangtong.xyz:3478",
+      //       credential: "123456",
+      //       username: "admin:123456",
+      //     },
+      //   ],
+      // });
       const peer2 = new PeerConnection({
         iceServers: [
           {
@@ -141,19 +141,19 @@
         ],
       });
 
-      peer.onicecandidate = (e) => {
-        if (e.candidate) {
-          message.log("1_搜集并发送候选人");
-          socket.send(
-            JSON.stringify({
-              type: `offer_ice`,
-              iceCandidate: e.candidate,
-            })
-          );
-        } else {
-          message.log("1_候选人收集完成！");
-        }
-      };
+      // peer.onicecandidate = (e) => {
+      //   if (e.candidate) {
+      //     message.log("1_搜集并发送候选人");
+      //     socket.send(
+      //       JSON.stringify({
+      //         type: `offer_ice`,
+      //         iceCandidate: e.candidate,
+      //       })
+      //     );
+      //   } else {
+      //     message.log("1_候选人收集完成！");
+      //   }
+      // };
 
       peer2.onicecandidate = (e) => {
         if (e.candidate) {
@@ -171,17 +171,17 @@
 
       async function startLive(offerSdp) {
         let stream;
-        let stream2;
+        // let stream2;
         try {
           message.log("尝试调取本地摄像头/麦克风");
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
           });
-          stream2 = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: false,
-          });
+          // stream2 = await navigator.mediaDevices.getDisplayMedia({
+          //   video: true,
+          //   audio: false,
+          // });
           message.log("摄像头/麦克风获取成功！");
           // localVideo.srcObject = stream2;
           // remoteVideo.srcObject = stream;
@@ -193,27 +193,27 @@
         message.log(`------ WebRTC 发起方流程开始 ------`);
         message.log("将媒体轨道添加到轨道集");
 
-        stream2.getTracks().forEach((track) => {
-          peer.addTrack(track, stream2);
-        });
+        // stream2.getTracks().forEach((track) => {
+        //   peer.addTrack(track, stream2);
+        // });
 
         stream.getTracks().forEach((track) => {
           peer2.addTrack(track, stream);
         });
 
         message.log("创建本地SDP");
-        const offer = await peer.createOffer();
+        // const offer = await peer.createOffer();
         const offer2 = await peer2.createOffer();
-        await peer.setLocalDescription(offer);
+        // await peer.setLocalDescription(offer);
         await peer2.setLocalDescription(offer2);
 
         message.log(`传输发起方本地SDP`);
-        socket.send(
-          JSON.stringify({
-            offer,
-            type: "offer",
-          })
-        );
+        // socket.send(
+        //   JSON.stringify({
+        //     offer,
+        //     type: "offer",
+        //   })
+        // );
         socket.send(
           JSON.stringify({
             offer2,
