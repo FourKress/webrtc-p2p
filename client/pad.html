@@ -10,8 +10,6 @@
     <div class="container">
     </div>
     <script>
-
-      message.log("信令通道（WebSocket）创建中......");
       const socket = new WebSocket("wss://wx-test.qiuchangtong.xyz/webRtc/");
       socket.onopen = () => {
         message.log("信令通道创建成功！");
