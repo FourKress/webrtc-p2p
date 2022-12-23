@@ -286,10 +286,10 @@
 
       async function startLive_pad(offerSdp) {
         message.log("接收到PAD发送方SDP");
-        await peerScreen.setRemoteDescription(offerSdp);
+        await peerPad.setRemoteDescription(offerSdp);
 
         message.log("创建PAD接收方（应答）SDP");
-        const answer_pad = await peerScreen.createAnswer();
+        const answer_pad = await peerPad.createAnswer();
         message.log(`传输PAD接收方（应答）SDP`);
         socket.send(
           JSON.stringify({
@@ -297,7 +297,7 @@
             type: "answer_pad",
           })
         );
-        await peerScreen.setLocalDescription(answer_pad);
+        await peerPad.setLocalDescription(answer_pad);
       }
 
       function apply() {
