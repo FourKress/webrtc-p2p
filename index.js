@@ -20,4 +20,8 @@ app.get("/answer", (req, res) => {
   res.sendFile("./client/answer.html", { root: __dirname });
 });
 
+app.get("/pad", (req, res) => {
+  res.sendFile("./client/pad.html", { root: __dirname });
+});
+
 app.listen(7777);
