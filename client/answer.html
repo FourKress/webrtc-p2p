@@ -302,11 +302,11 @@
 
       function apply() {
         button.style.display = "none";
-        // socket.send(
-        //   JSON.stringify({
-        //     type: "apply_pc",
-        //   })
-        // );
+        socket.send(
+          JSON.stringify({
+            type: "apply_pc",
+          })
+        );
         socket.send(
           JSON.stringify({
             type: "apply_pad",
