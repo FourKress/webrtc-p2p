@@ -12,9 +12,9 @@
     <script>
       const socket = new WebSocket("wss://wx-test.qiuchangtong.xyz/webRtc/");
       socket.onopen = () => {
-        message.log("信令通道创建成功！");
+        console.log("信令通道创建成功！");
       };
-      socket.onerror = () => message.error("信令通道创建失败！");
+      socket.onerror = () => console.error("信令通道创建失败！");
       socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
         const { type, iceCandidate = {} } = data;
@@ -33,7 +33,7 @@
         window.RTCPeerConnection ||
         window.mozRTCPeerConnection ||
         window.webkitRTCPeerConnection;
-      !PeerConnection && message.error("浏览器不支持WebRTC！");
+      !PeerConnection && console.error("浏览器不支持WebRTC！");
       const peer = new PeerConnection({
         iceServers: [
           {
@@ -47,7 +47,7 @@
 
       peer.onicecandidate = (e) => {
         if (e.candidate) {
-          message.log("3_搜集并发送候选人");
+          console.log("3_搜集并发送候选人");
           socket.send(
             JSON.stringify({
               type: `offer_pad_ice`,
@@ -55,36 +55,36 @@
             })
           );
         } else {
-          message.log("3_候选人收集完成！");
+          console.log("3_候选人收集完成！");
         }
       };
 
       async function startLive() {
         let stream;
         try {
-          message.log("尝试调取本地摄像头/麦克风");
+          console.log("尝试调取本地摄像头/麦克风");
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: true,
           });
-          message.log("摄像头/麦克风获取成功！");
+          console.log("摄像头/麦克风获取成功！");
         } catch {
-          message.error("摄像头/麦克风获取失败！");
+          console.error("摄像头/麦克风获取失败！");
           return;
         }
 
-        message.log(`------ WebRTC 发起方流程开始 ------`);
-        message.log("将媒体轨道添加到轨道集");
+        console.log(`------ WebRTC 发起方流程开始 ------`);
+        console.log("将媒体轨道添加到轨道集");
 
         stream.getTracks().forEach((track) => {
           peer.addTrack(track, stream);
         });
 
-        message.log("创建本地SDP");
+        console.log("创建本地SDP");
         const offer_pad = await peer.createOffer();
         await peer.setLocalDescription(offer_pad);
 
-        message.log(`传输发起方本地SDP`);
+        console.log(`传输发起方本地SDP`);
         socket.send(
           JSON.stringify({
             offer_pad,
